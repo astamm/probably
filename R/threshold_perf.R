@@ -31,6 +31,14 @@
 #' of values between 0.5 and 1.0 are used. **Note**: if this
 #' argument is used, it must be named.
 #'
+#' @param event_level A single string. Either `"first"` or `"second"` to specify
+#'   which level of truth to consider as the "event". Defaults to `"first"`
+#'   which is the convention in package **yardstick**.
+#'
+#' @param additional_metrics A character vector specifying other classification
+#'   metrics to be computed in addition to sensitivity, specificity and Youden
+#'   index. Defaults to `NULL`.
+#'
 #' @return A tibble with columns: `.threshold`, `.estimator`, `.metric`,
 #' `.estimate` and any existing groups.
 #'
@@ -88,6 +96,8 @@ threshold_perf.data.frame <- function(.data,
                                       truth,
                                       estimate,
                                       thresholds = NULL,
+                                      event_level = "first",
+                                      additional_metrics = NULL,
                                       na_rm = TRUE,
                                       ...) {
 
@@ -144,7 +154,7 @@ threshold_perf.data.frame <- function(.data,
       inc = c("truth", "prob", rs_ch)
     ) %>%
     mutate(
-      alt_pred = recode_data(truth, prob, .threshold)
+      alt_pred = recode_data(truth, prob, .threshold, event_level = event_level)
     )
 
   if (!is.null(rs_id)) {
@@ -154,7 +164,8 @@ threshold_perf.data.frame <- function(.data,
   }
 
   .data_metrics <- .data %>%
-    two_class(truth, estimate = alt_pred)
+    two_class(truth, estimate = alt_pred, event_level = event_level, additional_metrics = additional_metrics)
+  print(.data_metrics)
 
   # Create the `distance` metric data frame
   # and add it on
@@ -176,9 +187,18 @@ threshold_perf.data.frame <- function(.data,
 }
 
 #' @importFrom yardstick sens spec j_index metric_set
-two_class <- function(...) {
+two_class <- function(..., event_level = "first", additional_metrics = NULL) {
   mets <- metric_set(sens, spec, j_index)
-  mets(...)
+  if (is.null(additional_metrics) || length(additional_metrics) == 0)
+    full_mets <- mets
+  else {
+    default_mets <- attr(mets, "metrics")
+    nms <- c(names(default_mets), additional_metrics)
+    full_mets <- metric_set(!!!lapply(nms, rlang::as_function))
+    if (!all(sapply(attr(full_mets, "metrics"), function(.x) class(.x)[1]) == "class_metric"))
+      stop("All metrics should be classification metrics.")
+  }
+  full_mets(..., event_level = event_level)
 }
 
 expand_preds <- function(.data, threshold, inc = NULL) {

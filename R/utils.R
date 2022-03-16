@@ -2,9 +2,9 @@
 #' @importFrom utils globalVariables
 
 # is there a forcats for this?
-recode_data <- function(obs, prob, threshold) {
+recode_data <- function(obs, prob, threshold, event_level = "first") {
   lvl <- levels(obs)
-  if (getOption("yardstick.event_first", default = TRUE)) {
+  if (event_level == "first") {
     pred <- ifelse(prob >= threshold, lvl[1], lvl[2])
   } else {
     pred <- ifelse(prob >= threshold, lvl[2], lvl[1])

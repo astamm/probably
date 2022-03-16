@@ -7,7 +7,16 @@
 \usage{
 threshold_perf(.data, ...)
 
-\method{threshold_perf}{data.frame}(.data, truth, estimate, thresholds = NULL, na_rm = TRUE, ...)
+\method{threshold_perf}{data.frame}(
+  .data,
+  truth,
+  estimate,
+  thresholds = NULL,
+  event_level = "first",
+  additional_metrics = NULL,
+  na_rm = TRUE,
+  ...
+)
 }
 \arguments{
 \item{.data}{A tibble, potentially grouped.}
@@ -24,6 +33,14 @@ threshold_perf(.data, ...)
 threshold. If unspecified, a series
 of values between 0.5 and 1.0 are used. \strong{Note}: if this
 argument is used, it must be named.}
+
+\item{event_level}{A single string. Either \code{"first"} or \code{"second"} to specify
+which level of truth to consider as the "event". Defaults to \code{"first"}
+which is the convention in package \strong{yardstick}.}
+
+\item{additional_metrics}{A character vector specifying other classification
+metrics to be computed in addition to sensitivity, specificity and Youden
+index. Defaults to \code{NULL}.}
 
 \item{na_rm}{A single logical: should missing data be removed?}
 }
